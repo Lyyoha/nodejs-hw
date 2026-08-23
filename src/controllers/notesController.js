@@ -3,9 +3,11 @@ import createHttpError from 'http-errors';
 
 export const getAllNotes = async (req, res, next) => {
   try {
+    const userId = req.user._id;
     const { page = 1, perPage = 10, tag, search } = req.query;
     const skip = (page - 1) * perPage;
     const notesQuery = Note.find();
+    notesQuery.where('userId').equals(userId);
     if (search) {
       notesQuery.where({
         $or: [
@@ -31,7 +33,8 @@ export const getAllNotes = async (req, res, next) => {
 export const getNoteById = async (req, res, next) => {
   try {
     const { noteId } = req.params;
-    const note = await Note.findById(noteId);
+    const userId = req.user._id;
+    const note = await Note.findOne({ _id: noteId, userId });
     if (!note) throw createHttpError(404, 'Note not found');
     res.json(note);
   } catch (error) {
@@ -41,7 +44,8 @@ export const getNoteById = async (req, res, next) => {
 
 export const createNote = async (req, res, next) => {
   try {
-    const newNote = await Note.create(req.body);
+    const userId = req.user._id;
+    const newNote = await Note.create({ ...req.body, userId });
     res.status(201).json(newNote);
   } catch (error) {
     next(error);
@@ -50,10 +54,13 @@ export const createNote = async (req, res, next) => {
 
 export const updateNote = async (req, res, next) => {
   try {
+    const userId = req.user._id;
     const { noteId } = req.params;
-    const note = await Note.findByIdAndUpdate(noteId, req.body, {
-      returnDocument: 'after',
-    });
+    const note = await Note.findOneAndUpdate(
+      { _id: noteId, userId },
+      req.body,
+      { returnDocument: 'after' },
+    );
     if (!note) throw createHttpError(404, 'Note not found');
     res.json(note);
   } catch (error) {
@@ -63,8 +70,9 @@ export const updateNote = async (req, res, next) => {
 
 export const deleteNote = async (req, res, next) => {
   try {
+    const userId = req.user._id;
     const { noteId } = req.params;
-    const note = await Note.findByIdAndDelete(noteId);
+    const note = await Note.findOneAndDelete({ _id: noteId, userId });
     if (!note) throw createHttpError(404, 'Note not found');
     res.json(note);
   } catch (error) {
