@@ -6,14 +6,41 @@ import {
   getNoteById,
   updateNote,
 } from '../controllers/notesController.js';
+import { celebrate } from 'celebrate';
+import {
+  createNoteSchema,
+  getAllNotesSchema,
+  noteIdSchema,
+  updateNoteSchema,
+} from '../validations/notesValidation.js';
 
 const noteRouter = Router();
 
-noteRouter.get('/notes', getAllNotes);
-noteRouter.get('/notes/:noteId', getNoteById);
+noteRouter.get(
+  '/',
+  celebrate(getAllNotesSchema, { abortEarly: false }),
+  getAllNotes,
+);
+noteRouter.get(
+  '/:noteId',
+  celebrate(noteIdSchema, { abortEarly: false }),
+  getNoteById,
+);
 
-noteRouter.post('/notes', createNote);
-noteRouter.patch('/notes/:noteId', updateNote);
-noteRouter.delete('/notes/:noteId', deleteNote);
+noteRouter.post(
+  '/',
+  celebrate(createNoteSchema, { abortEarly: false }),
+  createNote,
+);
+noteRouter.patch(
+  '/:noteId',
+  celebrate(updateNoteSchema, { abortEarly: false }),
+  updateNote,
+);
+noteRouter.delete(
+  '/:noteId',
+  celebrate(noteIdSchema, { abortEarly: false }),
+  deleteNote,
+);
 
 export default noteRouter;
