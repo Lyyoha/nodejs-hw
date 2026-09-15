@@ -1,21 +1,29 @@
 import 'dotenv/config';
-import nodemailer from 'nodemailer';
 
-const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASSWORD, SMTP_FROM } =
-  process.env;
-
-const transporter = nodemailer.createTransport({
-  host: SMTP_HOST,
-  port: Number(SMTP_PORT),
-  secure: true,
-  auth: { user: SMTP_USER, pass: SMTP_PASSWORD },
-});
+const { BREVO_API_KEY, SMTP_FROM } = process.env;
 
 export const sendEmail = async ({ to, subject, html }) => {
-  return transporter.sendMail({
-    from: SMTP_FROM,
-    to,
-    subject,
-    html,
+  const response = await fetch('https://api.brevo.com/v3/smtp/email', {
+    method: 'POST',
+    headers: {
+      accept: 'application/json',
+      'api-key': BREVO_API_KEY,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      sender: { email: SMTP_FROM },
+      to: [{ email: to }],
+      subject,
+      htmlContent: html,
+    }),
   });
+
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(
+      `Brevo API error: ${response.status} ${JSON.stringify(errorData)}`,
+    );
+  }
+
+  return response.json();
 };
